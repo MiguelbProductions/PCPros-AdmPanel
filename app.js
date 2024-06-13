@@ -39,13 +39,13 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: 'mongodb://localhost:27017/repairshop',
+    mongoUrl: 'mongodb+srv://miguellb:maretasp@cluster0.3pius7j.mongodb.net/repairshop',
     ttl: 14 * 24 * 60 * 60
   }),
   cookie: { maxAge: 14 * 24 * 60 * 60 * 1000 }
 }));
 
-mongoose.connect('mongodb://localhost:27017/repairshop', {})
+mongoose.connect('mongodb+srv://miguellb:maretasp@cluster0.3pius7j.mongodb.net/repairshop', {})
 .then(() => {
   console.log('Conectado ao MongoDB');
 }).catch(err => {
