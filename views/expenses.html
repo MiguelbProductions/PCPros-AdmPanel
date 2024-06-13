@@ -1,0 +1,110 @@
+<%- include("./partials/header.html") %>
+
+<div class="container mt-5">
+  <div class="d-flex justify-content-end mb-3">
+    <button class="btn btn-falcon-default btn-sm mx-2" id="exportCsvButton">
+      <span class="fas fa-file-csv" data-fa-transform="shrink-3"></span>
+      <span>Exportar CSV</span>
+    </button>
+    <button class="btn btn-falcon-default btn-sm" id="exportExcelButton">
+      <span class="fas fa-file-excel" data-fa-transform="shrink-3"></span>
+      <span>Exportar Excel</span>
+    </button>
+    <button class="btn btn-falcon-default btn-sm mx-2" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+      <span class="fas fa-plus" data-fa-transform="shrink-3"></span>
+      <span>Nova Despesa</span>
+    </button>
+  </div>
+
+  <div class="list-group">
+    <% let totalAmount = 0; %>
+    <% expenses.forEach(expense => { %>
+      <% totalAmount += expense.amount; %>
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div style="width: 50%;">
+          <h5 class="mb-1"><%= expense.description %></h5>
+          <small class="text-muted"><%= new Date(expense.date).toLocaleDateString() %> - <%= expense.category %></small>
+        </div>
+        <div class="<%= expense.amount < 0 ? 'text-danger' : 'text-success' %> fs-4" style="width: 40%;">
+          <strong><%= expense.amount < 0 ? '-' : '+' %> <%= expense.amount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' }) %></strong>
+        </div>
+        <div style="width: 10%;">
+          <button class="btn btn-danger btn-sm deleteExpense" data-id="<%= expense._id %>" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">Deletar</button>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+
+  <!-- Total das Despesas -->
+  <hr>
+  <div class="d-flex justify-content-end">
+    <h4 class="me-3">Total:</h4>
+    <h4 class="<%= totalAmount < 0 ? 'text-danger' : 'text-success' %>"><%= totalAmount.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' }) %></h4>
+  </div>
+</div>
+
+<div class="modal fade" id="addExpenseModal" tabindex="-1" aria-labelledby="addExpenseModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addExpenseModalLabel">Adicionar Nova Despesa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addExpenseForm">
+          <div class="mb-3">
+            <label for="description" class="form-label">Descrição</label>
+            <input type="text" class="form-control" id="description" name="description" required>
+          </div>
+          <div class="mb-3">
+            <label for="amount" class="form-label">Valor</label>
+            <input type="number" class="form-control" id="amount" name="amount" required>
+          </div>
+          <div class="mb-3">
+            <label for="date" class="form-label">Data</label>
+            <input type="date" class="form-control" id="date" name="date" value="<%= new Date().toISOString().split('T')[0] %>" required>
+          </div>
+          <div class="mb-3">
+            <label for="category" class="form-label">Categoria</label>
+            <select class="form-control" id="category" name="category" required>
+              <option value="">Selecione uma categoria...</option>
+              <option value="Compra de ferramenta(s) e/ou equipamento(s)">Compra de ferramenta(s) e/ou equipamento(s)</option>
+              <option value="Compra de software(s) e/ou licença(s)">Compra de software(s) e/ou licença(s)</option>
+              <option value="Serviços de Terceiros">Serviços de Terceiros</option>
+              <option value="Investimentos de Terceiros">Investimentos de Terceiros</option>
+              <option value="Investimento Pessoal">Investimento Pessoal</option>
+              <option value="Donativos">Donativos</option>
+              <option value="Utilização Pessoal">Utilização Pessoal</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        <button type="submit" class="btn btn-primary" form="addExpenseForm">Salvar Despesa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmar Exclusão</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Tem certeza que deseja excluir esta despesa?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteButton">Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/expenses.js"></script>
+
+<%- include("./partials/footer.html") %>

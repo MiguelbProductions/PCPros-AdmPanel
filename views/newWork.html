@@ -1,0 +1,190 @@
+<%- include("./partials/header.html") %>
+
+<div class="row gx-3">
+  <div class="col-12">
+    <div class="card" id="newWorkForm">
+      <div class="card-header">
+        <h5 class="card-title">New Work</h5>
+      </div>
+      <div class="card-body">
+        <form id="workForm" action="/api/works" method="POST">
+          <div class="mb-3">
+            <label for="customer" class="form-label">Customer</label>
+            <select class="form-select" id="customer" name="customer" required>
+              <% customers.forEach(customer => { %>
+                <option value="<%= customer._id %>"><%= customer.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="equipmentType" class="form-label">Equipment Type</label>
+            <select class="form-select" id="equipmentType" name="equipmentType" required>
+              <option value="Laptop">Laptop</option>
+              <option value="Pc">Pc</option>
+              <option value="Phone">Phone</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="equipmentModel" class="form-label">Equipment Model</label>
+            <input type="text" class="form-control" id="equipmentModel" name="equipmentModel" required>
+          </div>
+          <div class="mb-3">
+            <label for="equipmentPassword" class="form-label">Equipment Password</label>
+            <input type="text" class="form-control" id="equipmentPassword" name="equipmentPassword">
+          </div>
+          <div class="mb-3">
+            <label for="services" class="form-label">Services</label>
+            <div id="services-container">
+              <% services.forEach(service => { %>
+                <div class="service-item mb-2">
+                  <div class="form-check">
+                    <input class="form-check-input service-checkbox" type="checkbox" value="<%= service._id %>" id="service-<%= service._id %>" data-minprice="<%= service.minPrice %>" data-maxprice="<%= service.maxPrice %>" data-price="<%= service.price %>">
+                    <label class="form-check-label" for="service-<%= service._id %>"><%= service.name %> 
+                      <% if (service.price) { %>
+                        (<%= service.price %>€)
+                      <% } else { %>
+                        (<%= service.minPrice %>€ - <%= service.maxPrice %>€)
+                      <% } %>
+                    </label>
+                  </div>
+                  <% if (!service.price) { %>
+                    <input type="number" class="form-control service-price d-none" id="service-price-<%= service._id %>" name="service-price-<%= service._id %>" placeholder="Select a price between <%= service.minPrice %>€ and <%= service.maxPrice %>€" min="<%= service.minPrice %>" max="<%= service.maxPrice %>">
+                  <% } %>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="valueToCharge" class="form-label">Value to Charge (€)</label>
+            <input type="number" class="form-control" id="valueToCharge_input" name="valueToCharge" disabled required>
+            <input type="number" class="form-control d-none" id="valueToCharge" name="valueToCharge">
+          </div>
+          <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status" required>
+              <option value="Pending">Pending</option>
+              <option value="InProgress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="priority" class="form-label">Priority</label>
+            <select class="form-select" id="priority" name="priority" required>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Work</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include("./partials/footer.html") %>
+
+<script>
+  $(document).ready(function() {
+    $('.service-checkbox').change(function() {
+      var total = 0;
+      $('.service-checkbox:checked').each(function() {
+        var minPrice = parseFloat($(this).data('minprice'));
+        var maxPrice = parseFloat($(this).data('maxprice'));
+        var fixedPrice = parseFloat($(this).data('price'));
+        var priceInput = $('#service-price-' + $(this).val());
+        
+        if (!isNaN(fixedPrice)) {
+          total += fixedPrice;
+        } else if (priceInput && priceInput.val()) {
+          total += parseFloat(priceInput.val());
+        }
+
+        if (this.checked) {
+          priceInput.removeClass('d-none');
+          priceInput.prop('required', true);
+          priceInput.on('input', updateValueToCharge);
+          priceInput.on('blur', validatePriceInput);
+        } else {
+          priceInput.addClass('d-none');
+          priceInput.prop('required', false);
+          priceInput.off('input', updateValueToCharge);
+          priceInput.off('blur', validatePriceInput);
+          priceInput.val('');
+        }
+      });
+      
+      $('#valueToCharge, #valueToCharge_input').val(total.toFixed(2));
+    });
+
+    function updateValueToCharge() {
+      var total = 0;
+      $('.service-checkbox:checked').each(function() {
+        var minPrice = parseFloat($(this).data('minprice'));
+        var maxPrice = parseFloat($(this).data('maxprice'));
+        var fixedPrice = parseFloat($(this).data('price'));
+        var priceInput = $('#service-price-' + $(this).val());
+        
+        if (!isNaN(fixedPrice)) {
+          total += fixedPrice;
+        } else if (priceInput && priceInput.val()) {
+          total += parseFloat(priceInput.val());
+        }
+      });
+      
+      $('#valueToCharge, #valueToCharge_input').val(total.toFixed(2));
+    }
+
+    function validatePriceInput(event) {
+      var input = $(event.target);
+      var minPrice = parseFloat(input.attr('min'));
+      var maxPrice = parseFloat(input.attr('max'));
+      var value = parseFloat(input.val());
+
+      if (value < minPrice) {
+        input.val(minPrice);
+      } else if (value > maxPrice) {
+        input.val(maxPrice);
+      }
+
+      updateValueToCharge();
+    }
+
+    $('#workForm').submit(function(event) {
+      event.preventDefault();
+      var formData = $(this).serializeArray();
+      var selectedServices = [];
+      var services = []
+
+      $('.service-checkbox:checked').each(function() {
+        selectedServices.push($(this).val());
+      });
+
+      selectedServices.forEach(function(service) {
+        services.push(service)
+      });
+
+      let newKey = Object.keys(formData).reduce((max, key) => Math.max(max, parseInt(key)), 0) + 1;
+
+      formData[newKey] = { name: "services", value: services };
+
+      let finaldata = {}
+
+      $.each(formData, function(key, field) {
+        finaldata[field["name"]] = field["value"]
+      });
+
+      $.ajax({
+        url: '/api/works',
+        type: 'POST',
+        data: finaldata,
+        success: function(response) {
+          window.location.href = '/works';
+        },
+        error: function(xhr, status, error) {
+          console.error('Error:', error);
+        }
+      });
+    });
+  });
+</script>

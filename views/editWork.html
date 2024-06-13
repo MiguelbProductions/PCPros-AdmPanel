@@ -1,0 +1,185 @@
+<%- include("./partials/header.html") %>
+
+<div class="row gx-3">
+  <div class="col-12">
+    <div class="card" id="editWorkForm">
+      <div class="card-header">
+        <h5 class="card-title">Edit Work</h5>
+      </div>
+      <div class="card-body">
+        <form id="workForm" action="/api/works/<%= work._id %>" method="POST">
+          <div class="mb-3">
+            <label for="customer" class="form-label">Customer</label>
+            <select class="form-select" id="customer" name="customer" required>
+              <% customers.forEach(customer => { %>
+                <option value="<%= customer._id %>" <%= work.customer._id.equals(customer._id) ? 'selected' : '' %>><%= customer.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="equipmentType" class="form-label">Equipment Type</label>
+            <select class="form-select" id="equipmentType" name="equipmentType" required>
+              <option value="Laptop" <%= work.equipmentType === 'Laptop' ? 'selected' : '' %>>Laptop</option>
+              <option value="Pc" <%= work.equipmentType === 'Pc' ? 'selected' : '' %>>Pc</option>
+              <option value="Phone" <%= work.equipmentType === 'Phone' ? 'selected' : '' %>>Phone</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="equipmentModel" class="form-label">Equipment Model</label>
+            <input type="text" class="form-control" id="equipmentModel" name="equipmentModel" value="<%= work.equipmentModel %>" required>
+          </div>
+          <div class="mb-3">
+            <label for="equipmentPassword" class="form-label">Equipment Password</label>
+            <input type="text" class="form-control" id="equipmentPassword" name="equipmentPassword" value="<%= work.equipmentPassword %>">
+          </div>
+          <div class="mb-3">
+            <label for="services" class="form-label">Services</label>
+            <div id="services-container">
+              <% services.forEach(service => { %>
+                <div class="service-item mb-2">
+                  <div class="form-check">
+                    <input class="form-check-input service-checkbox" type="checkbox" value="<%= service._id %>" id="service-<%= service._id %>" data-minprice="<%= service.minPrice %>" data-maxprice="<%= service.maxPrice %>" data-price="<%= service.price %>" <%= work.services.some(s => s._id.equals(service._id)) ? 'checked' : '' %>>
+                    <label class="form-check-label" for="service-<%= service._id %>"><%= service.name %> 
+                      <% if (service.price) { %>
+                        (<%= service.price %>€)
+                      <% } else { %>
+                        (<%= service.minPrice %>€ - <%= service.maxPrice %>€)
+                      <% } %>
+                    </label>
+                  </div>
+                  <% if (!service.price) { %>
+                    <input type="number" class="form-control service-price <%= work.services.some(s => s._id.equals(service._id)) ? '' : 'd-none' %>" id="service-price-<%= service._id %>" name="service-price-<%= service._id %>" placeholder="Select a price between <%= service.minPrice %>€ and <%= service.maxPrice %>€" min="<%= service.minPrice %>" max="<%= service.maxPrice %>" value="<%= work.services.find(s => s._id.equals(service._id)) ? work.services.find(s => s._id.equals(service._id)).price : '' %>">
+                  <% } %>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="valueToCharge" class="form-label">Value to Charge (€)</label>
+            <input type="number" class="form-control" id="valueToCharge_input" name="valueToCharge" disabled value="<%= work.valueToCharge %>" required>
+            <input type="number" class="form-control d-none" id="valueToCharge" name="valueToCharge" value="<%= work.valueToCharge %>">
+          </div>
+          <div class="mb-3">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" name="status" required>
+              <option value="Pending" <%= work.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+              <option value="InProgress" <%= work.status === 'InProgress' ? 'selected' : '' %>>In Progress</option>
+              <option value="Completed" <%= work.status === 'Completed' ? 'selected' : '' %>>Completed</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="priority" class="form-label">Priority</label>
+            <select class="form-select" id="priority" name="priority" required>
+              <option value="Low" <%= work.priority === 'Low' ? 'selected' : '' %>>Low</option>
+              <option value="Medium" <%= work.priority === 'Medium' ? 'selected' : '' %>>Medium</option>
+              <option value="High" <%= work.priority === 'High' ? 'selected' : '' %>>High</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Update Work</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include("./partials/footer.html") %>
+
+<script>
+    $(document).ready(function() {
+        function updateValueToCharge() {
+            var total = 0;
+            $('.service-checkbox:checked').each(function() {
+                var fixedPrice = parseFloat($(this).data('price'));
+                var priceInput = $('#service-price-' + $(this).val());
+                
+                if (!isNaN(fixedPrice)) {
+                    total += fixedPrice;
+                } else if (priceInput && priceInput.val()) {
+                    total += parseFloat(priceInput.val());
+                }
+                
+                if (this.checked) {
+                    priceInput.removeClass('d-none');
+                    priceInput.prop('required', true);
+                } else {
+                    priceInput.addClass('d-none');
+                    priceInput.prop('required', false);
+                    priceInput.val('');
+                }
+            });
+
+            $('.service-checkbox:not(:checked)').each(function() {
+                var priceInput = $('#service-price-' + $(this).val());
+                priceInput.addClass('d-none');
+                priceInput.prop('required', false);
+                priceInput.val('');
+            });
+
+            $('#valueToCharge, #valueToCharge_input').val(total.toFixed(2));
+        }
+
+        function validatePriceInput(event) {
+            var input = $(event.target);
+            var minPrice = parseFloat(input.attr('min'));
+            var maxPrice = parseFloat(input.attr('max'));
+            var value = parseFloat(input.val());
+
+            if (value < minPrice) {
+                input.val(minPrice);
+            } else if (value > maxPrice) {
+                input.val(maxPrice);
+            }
+
+            updateValueToCharge();
+        }
+
+        $('.service-checkbox').change(function() {
+            updateValueToCharge();
+        });
+
+        $('.service-price').on('input', function() {
+            updateValueToCharge();
+        }).on('blur', function(event) {
+            validatePriceInput(event);
+        });
+
+        $('#workForm').submit(function(event) {
+            event.preventDefault();
+            var formData = $(this).serializeArray();
+            var selectedServices = [];
+            var services = []
+
+            $('.service-checkbox:checked').each(function() {
+                selectedServices.push($(this).val());
+            });
+
+            selectedServices.forEach(function(service) {
+                services.push(service)
+            });
+
+            let newKey = Object.keys(formData).reduce((max, key) => Math.max(max, parseInt(key)), 0) + 1;
+
+            formData[newKey] = { name: "services", value: services };
+
+            let finaldata = {}
+
+            $.each(formData, function(key, field) {
+                finaldata[field["name"]] = field["value"]
+            });
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'PUT',
+                data: finaldata,
+                success: function(response) {
+                    window.location.href = '/works';
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
+        });
+
+        $('.service-checkbox').trigger('change');
+    });
+</script>

@@ -1,0 +1,222 @@
+<%- include("./partials/header.html") %>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  
+
+<style>
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .card h2 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    .display-4 {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+</style>
+<div class="container mt-5">
+    <h1 class="mb-4">Statistics</h1>
+
+    <div class="row">
+      <div class="col-md-4">
+        <div class="card text-center mb-4">
+          <div class="card-body">
+            <h2>Total Projects</h2>
+            <p id="total-works" class="display-4"><%= statistics.totalWorks %></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center mb-4">
+          <div class="card-body">
+            <h2>Completed Projects</h2>
+            <p id="completed-works" class="display-4"><%= statistics.completedWorks %></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center mb-4">
+          <div class="card-body">
+            <h2>Total Revenue</h2>
+            <p id="total-revenue" class="display-4"><%= statistics.totalRevenue %> €</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card mb-4">
+          <div class="card-body">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card mb-4">
+          <div class="card-body">
+            <canvas id="worksByEquipmentTypeChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card mb-4">
+          <div class="card-body">
+            <canvas id="worksStatusChart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card mb-4">
+          <div class="card-body">
+            <canvas id="worksByServiceCountChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const worksByStatus = <%- JSON.stringify(statistics.worksByStatus) %>;
+        const revenueByMonth = <%- JSON.stringify(statistics.revenueByMonth) %>;
+        const worksByEquipmentType = <%- JSON.stringify(statistics.worksByEquipmentType) %>;
+        const worksByServiceCount = <%- JSON.stringify(statistics.worksByService) %>;
+
+        const statusLabels = worksByStatus.map(item => item._id);
+        const statusData = worksByStatus.map(item => item.count);
+
+        const revenueLabels = revenueByMonth.map(item => `${item._id.month}/${item._id.year}`);
+        const revenueData = revenueByMonth.map(item => item.total);
+
+        const equipmentTypeLabels = worksByEquipmentType.map(item => item._id);
+        const equipmentTypeData = worksByEquipmentType.map(item => item.count);
+
+        const serviceCountLabels = worksByServiceCount.map(item => item.serviceName);
+        const serviceCountData = worksByServiceCount.map(item => item.count);
+
+        const worksStatusChartCtx = document.getElementById('worksStatusChart').getContext('2d');
+        new Chart(worksStatusChartCtx, {
+            type: 'pie',
+            data: {
+            labels: statusLabels,
+            datasets: [{
+                label: 'Works by Status',
+                data: statusData,
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+            }]
+            },
+            options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                position: 'top',
+                }
+            }
+            }
+        });
+
+        const revenueChartCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueChartCtx, {
+            type: 'line',
+            data: {
+            labels: revenueLabels,
+            datasets: [{
+                label: 'Revenue by Month',
+                data: revenueData,
+                borderColor: '#36A2EB',
+                fill: false
+            }]
+            },
+            options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                position: 'top',
+                }
+            },
+            scales: {
+                x: {
+                title: {
+                    display: true,
+                    text: 'Month/Year'
+                }
+                },
+                y: {
+                title: {
+                    display: true,
+                    text: 'Revenue (€)'
+                }
+                }
+            }
+            }
+        });
+
+        const worksByEquipmentTypeChartCtx = document.getElementById('worksByEquipmentTypeChart').getContext('2d');
+        new Chart(worksByEquipmentTypeChartCtx, {
+            type: 'bar',
+            data: {
+            labels: equipmentTypeLabels,
+            datasets: [{
+                label: 'Works by Equipment Type',
+                data: equipmentTypeData,
+                backgroundColor: '#FF6384'
+            }]
+            },
+            options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                display: false,
+                }
+            },
+            scales: {
+                x: {
+                title: {
+                    display: true,
+                    text: 'Equipment Type'
+                }
+                },
+                y:
+                {
+                title: {
+                    display: true,
+                    text: 'Number of Works'
+                }
+                }
+            }
+            }
+        });
+
+        const worksByServiceCountChartCtx = document.getElementById('worksByServiceCountChart').getContext('2d');
+        new Chart(worksByServiceCountChartCtx, {
+            type: 'pie',
+            data: {
+            labels: serviceCountLabels,
+            datasets: [{
+                label: 'Works by Service Count',
+                data: serviceCountData,
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+            }]
+            },
+            options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                position: 'top',
+                }
+            }
+            }
+        });
+    });
+</script>
+
+<%- include("./partials/footer.html") %>
